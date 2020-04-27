@@ -17,7 +17,7 @@ def main():
 			viewPeople()
 			display_menu()
 		elif (choice == "2"):
-			print(array)
+			getCountryByInYr()
 			display_menu()
 		elif (choice == "3"):
 			find_gt_in_array(array)
@@ -40,7 +40,13 @@ def viewPeople():
             break
         
 
-        
+def getCountryByInYr():
+    year = input('Enter Year : ')
+    countries = getCountryByInYrDB(year)
+
+    for country in countries:
+        print(country['Name'],'|',country['Continent'],'|',country['IndepYear'])
+             
 
 
 
@@ -48,6 +54,7 @@ def viewPeople():
 
 
 def display_menu():
+    print('\n')
     print('World DB')
     print('-' * 7)
     print('')
@@ -82,6 +89,21 @@ def getPeopleDB():
     with conn:
         cursor = conn.cursor()
         cursor.execute(query)
+        x = cursor.fetchall()
+        return x
+
+def getCountryByInYrDB(year):
+    if (not conn):
+        connect()
+    else:
+        print("Already connected")
+
+    
+    query = "SELECT Name,Continent,IndepYear FROM country where IndepYear = %s"
+
+    with conn:
+        cursor = conn.cursor()
+        cursor.execute(query,year)
         x = cursor.fetchall()
         return x
     
