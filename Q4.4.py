@@ -20,7 +20,7 @@ def main():
 			getCountryByInYr()
 			display_menu()
 		elif (choice == "3"):
-			find_gt_in_array(array)
+			addPerson()
 			display_menu()
 		elif (choice == "x"):
 			break;
@@ -30,11 +30,14 @@ def main():
 			
 def viewPeople():
     people = getPeopleDB()
-
+    
     answer = ''
     for i in range(0,len(people),2):
         print(people[i]['personID'],'|',people[i]['personname'],'|',people[i]['age'])
-        print(people[i+1]['personID'],'|',people[i+1]['personname'],'|',people[i+1]['age'])
+        try:
+            print(people[i+1]['personID'],'|',people[i+1]['personname'],'|',people[i+1]['age'])
+        except:
+            pass
         answer = input('-- Quit (q) --')
         if answer == 'q' or answer == 'Q':
             break
@@ -49,6 +52,12 @@ def getCountryByInYr():
              
 
 
+def addPerson():
+    print('Add New Person')
+    print('-' * 14)
+    name = input('Name : ')
+    age = input('Age : ')
+    addPersonDB(name,age)
 
 
 
@@ -81,31 +90,52 @@ def getPeopleDB():
     if (not conn):
         connect()
     else:
-        print("Already connected")
+        pass
 
     
     query = "SELECT * FROM person"
 
-    with conn:
-        cursor = conn.cursor()
-        cursor.execute(query)
-        x = cursor.fetchall()
-        return x
+    try:
+        with conn:
+            cursor = conn.cursor()
+            cursor.execute(query)
+            x = cursor.fetchall()
+            return x
+    finally:
+        cursor.close()
 
 def getCountryByInYrDB(year):
     if (not conn):
         connect()
     else:
-        print("Already connected")
+        pass
 
     
     query = "SELECT Name,Continent,IndepYear FROM country where IndepYear = %s"
 
-    with conn:
-        cursor = conn.cursor()
-        cursor.execute(query,year)
-        x = cursor.fetchall()
-        return x
+    try:
+        with conn:
+            cursor = conn.cursor()
+            cursor.execute(query,year)
+            x = cursor.fetchall()
+            return x
+    finally:
+        cursor.close()
+
+def addPersonDB(name,age):
+    if (not conn):
+        connect()
+    else:
+        pass
+
+    query = "INSERT into person (personname,age) values (%s,%s)"
+
+    try:
+        with conn:
+            cursor = conn.cursor()
+            cursor.execute(query,(name,age))
+    finally:
+        cursor.close()
     
 
 if __name__ == "__main__":
