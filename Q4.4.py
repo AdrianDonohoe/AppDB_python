@@ -27,7 +27,14 @@ def main():
 		elif (choice == "4"):
 			getCountryByName()
 			display_menu()
+		elif (choice == "5"):
+			getCountryByPop()
+			display_menu()
 		elif (choice == "x"):
+			try:
+				conn.close()
+			except AttributeError:
+				pass
 			break;
 		else:
 			display_menu()
@@ -79,7 +86,31 @@ def getCountryByName():
 		print(row['Name'],' | ',row['Continent'],' | ',row['Population'],' | ',row['HeadOfState']) # The project spec doesnt specifically say what to print here, but this is what the example uses.
 
 	
+def getCountryByPop():
+	global df
+	if df.empty:
+		df = getCountryDB()
 	
+	print('')
+	print('Countries by Pop')
+	print('-' * 16)
+	operator = input('Enter < > or = : ')
+	pop = int(input('Enter population : '))
+	if operator == '<':
+		found = df.loc[df.loc[:,'Population'] < pop ]
+		for index, row in found.iterrows():
+			print(row['Code'],' | ',row['Name'],' | ', row['Continent'],' | ',row['Population'])
+	elif operator == '>':
+		found = df.loc[df.loc[:,'Population'] > pop ]
+		for index, row in found.iterrows():
+			print(row['Code'],' | ',row['Name'],' | ', row['Continent'],' | ',row['Population'])
+	elif operator == '=':
+		found = df.loc[df.loc[:,'Population'] == pop ]
+		for index, row in found.iterrows():
+			print(row['Code'],' | ',row['Name'],' | ', row['Continent'],' | ',row['Population'])
+	else:
+		pass
+
 
 
 
@@ -146,21 +177,23 @@ def getCountryByInYrDB(year):
         cursor.close()
 
 def addPersonDB(name,age):
-    if (not conn):
-        connect()
-    else:
-        pass
+	if (not conn):
+		connect()
+	else:
+		pass
 
-    query = "INSERT into person (personname,age) values (%s,%s)"
+	query = "INSERT into person (personname,age) values (%s,%s)"
 
-    try:
-        with conn:
-            cursor = conn.cursor()
-            cursor.execute(query,(name,age))
-    except pymysql.err.IntegrityError:
-        print('*** ERROR ***: ', name, ' already exists')
-    finally:
-        cursor.close()
+	try:
+		with conn:
+			cursor = conn.cursor()
+			cursor.execute(query,(name,age))
+	except pymysql.err.IntegrityError:
+		print('*** ERROR ***: ', name, ' already exists')
+	except pymysql.err.InternalError:
+		print('Please add valid age, must be an integer')
+	finally:
+		cursor.close()
 
 def getCountryDB():
     if(not conn):
