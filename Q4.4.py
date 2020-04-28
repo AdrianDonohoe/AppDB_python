@@ -1,18 +1,20 @@
-
 import pymysql
+import pandas as pd
 
 
 conn = None
+df = pd.DataFrame()
 
 # Main function
+
+
 def main():
-	
 
 	display_menu()
-	
+
 	while True:
 		choice = input("Choice: ")
-		
+
 		if (choice == "1"):
 			viewPeople()
 			display_menu()
@@ -21,6 +23,9 @@ def main():
 			display_menu()
 		elif (choice == "3"):
 			addPerson()
+			display_menu()
+		elif (choice == "4"):
+			getCountryByName()
 			display_menu()
 		elif (choice == "x"):
 			break;
@@ -58,6 +63,24 @@ def addPerson():
     name = input('Name : ')
     age = input('Age : ')
     addPersonDB(name,age)
+
+def getCountryByName():
+	global df
+	if df.empty:
+		df = getCountryDB()
+	
+	print('')
+	print('Countries by Name')
+	print('-' * 17)
+	sub = input('Enter Country Name : ')
+	df['Found'] = df['Name'].str.find(sub) # Adapted from https://www.geeksforgeeks.org/python-pandas-series-str-find/
+	found = df.loc[df.loc[:,'Found'] != -1 ]
+	for index, row in found.iterrows():
+		print(row['Name'],' | ',row['Continent'],' | ',row['Population'],' | ',row['HeadOfState']) # The project spec doesnt specifically say what to print here, but this is what the example uses.
+
+	
+	
+
 
 
 
@@ -134,9 +157,21 @@ def addPersonDB(name,age):
         with conn:
             cursor = conn.cursor()
             cursor.execute(query,(name,age))
+    except pymysql.err.IntegrityError:
+        print('*** ERROR ***: ', name, ' already exists')
     finally:
         cursor.close()
-    
+
+def getCountryDB():
+    if(not conn):
+        connect()
+    else:
+        pass
+    query = "SELECT * FROM country"
+
+    df = pd.read_sql(query, conn)
+    return df
+
 
 if __name__ == "__main__":
 	# execute only if run as a script 
