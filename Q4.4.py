@@ -1,3 +1,4 @@
+## Created by Adrian Donohoe 27/04/2020
 import pymysql
 import pandas as pd
 import pymongo
@@ -5,16 +6,18 @@ import pymongo
 
 conn = None  # Connection variable for MySQL
 myclient = None # Connection variable for Mongo
-df = pd.DataFrame()
+df = pd.DataFrame() # Make empty DF, for storing DB query for menu 4 and 5.
 
 # Main function
 def main():
 
-	display_menu()
+	display_menu() # Display the menu
 
-	while True:
-		choice = input("Choice: ")
-
+	while True: #  keeps the menu displayed until x is entered
+		choice = input("Choice: ") # query the user for their menu choice
+		''' a bunch of if/elif statements which wiil run based on the users input. 
+		Each one calls a diferent function
+		'''
 		if (choice == "1"):
 			viewPeople()
 			display_menu()
@@ -38,89 +41,95 @@ def main():
 			display_menu()
 		elif (choice == "x"):
 			try:
-				conn.close()
+				conn.close() # close the MySQL connection before exiting
+				myclient.close() # close the Mongo connection
 			except AttributeError:
 				pass
-			break;
-		else:
+			break;  # breaks out of the menu while loop, to exit the program
+		else: # If anything other than required choices are made, display the menu again
 			display_menu()
 			
-			
+
+## Function to get people from mysql db and display 2 at a time			
 def viewPeople():
-    people = getPeopleDB()
+    people = getPeopleDB() # Call the function to connect/read the DB and store result in people variable
     
-    answer = ''
-    for i in range(0,len(people),2):
-        print(people[i]['personID'],'|',people[i]['personname'],'|',people[i]['age'])
-        try:
-            print(people[i+1]['personID'],'|',people[i+1]['personname'],'|',people[i+1]['age'])
-        except:
-            pass
-        answer = input('-- Quit (q) --')
-        if answer == 'q' or answer == 'Q':
-            break
+    answer = '' # Used to hold answer to thje quit question 
+    for i in range(0,len(people),2): # loop over the returned people table, in steps of 2
+        print(people[i]['personID'],'|',people[i]['personname'],'|',people[i]['age']) # print 1 line
+        try: # necessary to put this in a try block, so that we can print a table with odd rows without crashing
+            print(people[i+1]['personID'],'|',people[i+1]['personname'],'|',people[i+1]['age']) # prints the 2nd line
+        except: # will fail for odd numbered table
+            pass # so we can just pass here
+        answer = input('-- Quit (q) --') # Ask if user wants to quit
+        if answer == 'q' or answer == 'Q': # quit if q or Q entered
+            break # and break the for loop to exit function
         
-
+## Function to get Country by Independence Year from mysql db
 def getCountryByInYr():
-    year = input('Enter Year : ')
-    countries = getCountryByInYrDB(year)
+    year = input('Enter Year : ') # Ask user to enter the year
+    countries = getCountryByInYrDB(year) # Call the DB function with year and assign to countries variable
 
-    for country in countries:
+    for country in countries: # loop over the countries and print name, continent and Independence Year
         print(country['Name'],'|',country['Continent'],'|',country['IndepYear'])
              
 
-
+## Function to add a new person to the DB
 def addPerson():
     print('Add New Person')
     print('-' * 14)
-    name = input('Name : ')
-    age = input('Age : ')
-    addPersonDB(name,age)
+    name = input('Name : ') # get the name
+    age = input('Age : ') # get the age
+    addPersonDB(name,age) # call  the DB function with name and age to be added
 
+## Function to get Country by Name. Fetch all data once and store
 def getCountryByName():
-	global df
-	if df.empty:
-		df = getCountryDB()
+	global df # data will be stored in global Dataframe
+	if df.empty: # if the DF is empty, fetch the data
+		df = getCountryDB() # call the function to get the data and assign to the global DF
 	
 	print('')
 	print('Countries by Name')
 	print('-' * 17)
-	sub = input('Enter Country Name : ')
+	sub = input('Enter Country Name : ') # the the string from the user to be searched
+	# Search for the substring in the Name column, the location of the substring is put in the Found column. -1, if not found.
 	df['Found'] = df['Name'].str.find(sub) # Adapted from https://www.geeksforgeeks.org/python-pandas-series-str-find/
-	found = df.loc[df.loc[:,'Found'] != -1 ]
-	for index, row in found.iterrows():
+	found = df.loc[df.loc[:,'Found'] != -1 ] # assign all rows where substring is found to found DF
+	for index, row in found.iterrows(): # iterate over the rows and print Name, continent, population and head of state.
 		print(row['Name'],' | ',row['Continent'],' | ',row['Population'],' | ',row['HeadOfState']) # The project spec doesnt specifically say what to print here, but this is what the example uses.
 
-	
+## Function to get Countries by Population	
 def getCountryByPop():
-	global df
-	if df.empty:
-		df = getCountryDB()
+	global df # data will be stored in global Dataframe
+	if df.empty: # if the DF is empty, fetch the data
+		df = getCountryDB() # call the function to get the data and assign to the global DF
 	
 	print('')
 	print('Countries by Pop')
 	print('-' * 16)
-	operator = input('Enter < > or = : ')
+	operator = input('Enter < > or = : ') # get the operator for the query
+	## This block will run until a valid number is put in
 	while True:  # Adapted from https://docs.python.org/3/tutorial/errors.html
 		try:
-			pop = int(input('Enter population : '))
-			break
-		except ValueError:
+			pop = int(input('Enter population : ')) # convert the requested number from string to int
+			break # break the while loop if number is input
+		except ValueError: # Catch the invalid number
 			print("Oops!  That was no valid number.  Try again...")
-	if operator == '<':
-		found = df.loc[df.loc[:,'Population'] < pop ]
-		for index, row in found.iterrows():
+	# This block gets the answer from the DF
+	if operator == '<': # if less than
+		found = df.loc[df.loc[:,'Population'] < pop ] # get the data where population < pop
+		for index, row in found.iterrows(): # iterate over the rows and print Code, Name, Continent and population
 			print(row['Code'],' | ',row['Name'],' | ', row['Continent'],' | ',row['Population'])
-	elif operator == '>':
-		found = df.loc[df.loc[:,'Population'] > pop ]
-		for index, row in found.iterrows():
+	elif operator == '>': # if greater than
+		found = df.loc[df.loc[:,'Population'] > pop ] # get the data where population > pop
+		for index, row in found.iterrows(): # iterate over the rows and print Code, Name, Continent and population
 			print(row['Code'],' | ',row['Name'],' | ', row['Continent'],' | ',row['Population'])
-	elif operator == '=':
-		found = df.loc[df.loc[:,'Population'] == pop ]
-		for index, row in found.iterrows():
+	elif operator == '=': # if equal to
+		found = df.loc[df.loc[:,'Population'] == pop ] # get the data where population equal to pop
+		for index, row in found.iterrows(): # iterate over the rows and print Code, Name, Continent and population
 			print(row['Code'],' | ',row['Name'],' | ', row['Continent'],' | ',row['Population'])
 	else:
-		pass
+		pass # exit if no operator given
 
 def findStudentByAddress():
 	print('')
