@@ -1,13 +1,13 @@
 import pymysql
 import pandas as pd
+import pymongo
 
 
-conn = None
+conn = None  # Connection variable for MySQL
+myclient = None # Connection variable for Mongo
 df = pd.DataFrame()
 
 # Main function
-
-
 def main():
 
 	display_menu()
@@ -29,6 +29,9 @@ def main():
 			display_menu()
 		elif (choice == "5"):
 			getCountryByPop()
+			display_menu()
+		elif (choice == "6"):
+			findStudentByAddress()
 			display_menu()
 		elif (choice == "x"):
 			try:
@@ -95,7 +98,12 @@ def getCountryByPop():
 	print('Countries by Pop')
 	print('-' * 16)
 	operator = input('Enter < > or = : ')
-	pop = int(input('Enter population : '))
+	while True:  # Adapted from https://docs.python.org/3/tutorial/errors.html
+		try:
+			pop = int(input('Enter population : '))
+			break
+		except ValueError:
+			print("Oops!  That was no valid number.  Try again...")
 	if operator == '<':
 		found = df.loc[df.loc[:,'Population'] < pop ]
 		for index, row in found.iterrows():
@@ -111,6 +119,12 @@ def getCountryByPop():
 	else:
 		pass
 
+def findStudentByAddress():
+	print('')
+	print('Find Students by Address')
+	print('-' * 24)
+	address = input('Enter Address : ')
+	findStudentByAddressDB(address)
 
 
 
@@ -139,6 +153,10 @@ def connect():
     global conn
     conn = pymysql.connect(host="localhost",user="root",password="1solari2", db="world",cursorclass=pymysql.cursors.DictCursor)
     
+def mongo_connect():
+    global myclient
+    myclient = pymongo.MongoClient()
+    myclient.admin.command('ismaster')
 
 def getPeopleDB():
     if (not conn):
@@ -205,6 +223,24 @@ def getCountryDB():
     df = pd.read_sql(query, conn)
     return df
 
+def findStudentByAddressDB(address):
+	if (not myclient):
+		try:
+			mongo_connect()
+		except Exception as e:
+			print('Error ', e)
+		
+	mydb = myclient["proj20DB"]
+	docs = mydb["docs"]
+
+	query = {"details.address": {"$exists": "true"},}
+	project = {"details.address": 0}
+	qs = docs.find(query,project)
+	for x in qs:
+		try:
+			print(x["_id"],' | ', x["details"]["name"],' | ', x["details"]["age"],' | ', x["qualifications"])
+		except KeyError:
+			print(x["_id"],' | ', x["details"]["name"],' | ', x["details"]["age"])
 
 if __name__ == "__main__":
 	# execute only if run as a script 
