@@ -33,6 +33,9 @@ def main():
 		elif (choice == "6"):
 			findStudentByAddress()
 			display_menu()
+		elif (choice == "7"):
+			addNewCourse()
+			display_menu()
 		elif (choice == "x"):
 			try:
 				conn.close()
@@ -127,7 +130,14 @@ def findStudentByAddress():
 	findStudentByAddressDB(address)
 
 
-
+def addNewCourse():
+	print('')
+	print('Add New Course')
+	print('-' * 14)
+	iD = input('_id : ')
+	name = input('Name : ')
+	level = input('Level : ')
+	addNewCourseDB(iD,name,level)
 
 
 def display_menu():
@@ -233,7 +243,7 @@ def findStudentByAddressDB(address):
 	mydb = myclient["proj20DB"]
 	docs = mydb["docs"]
 
-	query = {"details.address": {"$exists": "true"},}
+	query = {"details.address": address}
 	project = {"details.address": 0}
 	qs = docs.find(query,project)
 	for x in qs:
@@ -241,6 +251,22 @@ def findStudentByAddressDB(address):
 			print(x["_id"],' | ', x["details"]["name"],' | ', x["details"]["age"],' | ', x["qualifications"])
 		except KeyError:
 			print(x["_id"],' | ', x["details"]["name"],' | ', x["details"]["age"])
+
+def addNewCourseDB(iD,name,level):
+	if (not myclient):
+		try:
+			mongo_connect()
+		except Exception as e:
+			print('Error ', e)
+		
+	mydb = myclient["proj20DB"]
+	docs = mydb["docs"]
+
+	query = {"_id": iD, "name": name, "level": level}
+	try:
+		docs.insert_one(query)
+	except pymongo.errors.DuplicateKeyError:
+		print('*** ERROR ***: _id DATA already exists')
 
 if __name__ == "__main__":
 	# execute only if run as a script 
