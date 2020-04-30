@@ -1,4 +1,5 @@
 ## Created by Adrian Donohoe 27/04/2020
+# https://github.com/AdrianDonohoe/AppDB_python
 import pymysql
 import pandas as pd
 import pymongo
@@ -131,24 +132,25 @@ def getCountryByPop():
 	else:
 		pass # exit if no operator given
 
+## Function to get Student by Address
 def findStudentByAddress():
 	print('')
 	print('Find Students by Address')
 	print('-' * 24)
-	address = input('Enter Address : ')
-	findStudentByAddressDB(address)
+	address = input('Enter Address : ') # get the users input, the address to find
+	findStudentByAddressDB(address) # call the DB function
 
-
+## Function to add a new course
 def addNewCourse():
 	print('')
 	print('Add New Course')
 	print('-' * 14)
-	iD = input('_id : ')
-	name = input('Name : ')
-	level = input('Level : ')
-	addNewCourseDB(iD,name,level)
+	iD = input('_id : ') # get the MongoDB _id from user
+	name = input('Name : ') # get the Course Name from user
+	level = input('Level : ') # get the course level
+	addNewCourseDB(iD,name,level) # call the DB function
 
-
+## Function to display the main menu
 def display_menu():
     print('\n')
     print('World DB')
@@ -167,115 +169,122 @@ def display_menu():
 
 
 
-
+# MySQL connect function
 def connect():
-    global conn
-    conn = pymysql.connect(host="localhost",user="root",password="1solari2", db="world",cursorclass=pymysql.cursors.DictCursor)
-    
+    global conn # using the global conn variable
+    conn = pymysql.connect(host="localhost",user="root",password="", db="world",cursorclass=pymysql.cursors.DictCursor) # Defines the db connection details
+
+# MongoDB connect function    
 def mongo_connect():
-    global myclient
-    myclient = pymongo.MongoClient()
+    global myclient # using the global myclient variable
+    myclient = pymongo.MongoClient() # use mongo client
     myclient.admin.command('ismaster')
 
+# DB Functin to get people from the DB
 def getPeopleDB():
-    if (not conn):
-        connect()
+    if (not conn): # check if not connected
+        connect() # then connect if not connected already
     else:
-        pass
+        pass # was using this block for debugging connection. Just left it in with a pass
 
     
-    query = "SELECT * FROM person"
+    query = "SELECT * FROM person" # the query to be sent to MySQL
 
     try:
         with conn:
-            cursor = conn.cursor()
-            cursor.execute(query)
-            x = cursor.fetchall()
-            return x
+            cursor = conn.cursor() # make a mysql cursor
+            cursor.execute(query) # execute the query
+            x = cursor.fetchall() # fetch results from cursor
+            return x # return the results
     finally:
-        cursor.close()
+        cursor.close() # Close the cursor.
 
+## DB Function to get the country by Independence year
 def getCountryByInYrDB(year):
-    if (not conn):
-        connect()
+    if (not conn): # check if not connected
+        connect() # then connect if not connected already
     else:
         pass
 
     
-    query = "SELECT Name,Continent,IndepYear FROM country where IndepYear = %s"
+    query = "SELECT Name,Continent,IndepYear FROM country where IndepYear = %s" # the MySQL query
 
     try:
         with conn:
-            cursor = conn.cursor()
-            cursor.execute(query,year)
-            x = cursor.fetchall()
-            return x
+            cursor = conn.cursor() # make a mysql cursor
+            cursor.execute(query,year) # execute the query
+            x = cursor.fetchall() # fetch results from cursor
+            return x # return the results
     finally:
-        cursor.close()
+        cursor.close() # Close the cursor.
 
+## DB Function to add a person to the person table
 def addPersonDB(name,age):
-	if (not conn):
-		connect()
+	if (not conn): # check if not connected
+		connect() # then connect if not connected already
 	else:
 		pass
 
-	query = "INSERT into person (personname,age) values (%s,%s)"
+	query = "INSERT into person (personname,age) values (%s,%s)" # the MySQL query
 
 	try:
 		with conn:
-			cursor = conn.cursor()
-			cursor.execute(query,(name,age))
-	except pymysql.err.IntegrityError:
+			cursor = conn.cursor() # make a mysql cursor
+			cursor.execute(query,(name,age)) # execute the query, passing name,age -> (%s,%s)
+	except pymysql.err.IntegrityError:  # Cath Integrity Error for adding a personname that already exists
 		print('*** ERROR ***: ', name, ' already exists')
-	except pymysql.err.InternalError:
+	except pymysql.err.InternalError: # Catch Internal Error, not enteringt a valid integer
 		print('Please add valid age, must be an integer')
 	finally:
-		cursor.close()
+		cursor.close() # Close the cursor.
 
+## DB Function to get country table
 def getCountryDB():
-    if(not conn):
-        connect()
+    if(not conn): # check if not connected
+        connect() # then connect if not connected already
     else:
         pass
-    query = "SELECT * FROM country"
+    query = "SELECT * FROM country" # the MySQL query
 
-    df = pd.read_sql(query, conn)
-    return df
+    df = pd.read_sql(query, conn) # Pandas method to run sql and read into pandas DataFrame
+    return df # return the DF
 
+## DB Function to find student by Address
 def findStudentByAddressDB(address):
-	if (not myclient):
+	if (not myclient): # check if not connected
 		try:
-			mongo_connect()
+			mongo_connect() # Connect to Mongo
 		except Exception as e:
-			print('Error ', e)
+			print('Error ', e) # print any exception
 		
-	mydb = myclient["proj20DB"]
-	docs = mydb["docs"]
+	mydb = myclient["proj20DB"] # Use this DB
+	docs = mydb["docs"]  # define collection
 
-	query = {"details.address": address}
-	project = {"details.address": 0}
-	qs = docs.find(query,project)
-	for x in qs:
+	query = {"details.address": address} # set the find query
+	project = {"details.address": 0} # set the find projection
+	qs = docs.find(query,project) # run the query command
+	for x in qs: # iterate over results
 		try:
-			print(x["_id"],' | ', x["details"]["name"],' | ', x["details"]["age"],' | ', x["qualifications"])
+			print(x["_id"],' | ', x["details"]["name"],' | ', x["details"]["age"],' | ', x["qualifications"]) # try print with qualifications if it exists
 		except KeyError:
-			print(x["_id"],' | ', x["details"]["name"],' | ', x["details"]["age"])
+			print(x["_id"],' | ', x["details"]["name"],' | ', x["details"]["age"]) # Otherwise catch Error and print without qualifications
 
+## DB Function to add a new course
 def addNewCourseDB(iD,name,level):
-	if (not myclient):
+	if (not myclient): # check if not connected
 		try:
-			mongo_connect()
+			mongo_connect() # Connect to Mongo
 		except Exception as e:
-			print('Error ', e)
+			print('Error ', e) # print any exception
 		
-	mydb = myclient["proj20DB"]
-	docs = mydb["docs"]
+	mydb = myclient["proj20DB"] # Use this DB
+	docs = mydb["docs"] # define collection
 
-	query = {"_id": iD, "name": name, "level": level}
+	query = {"_id": iD, "name": name, "level": level} # set the query for the insert_one
 	try:
-		docs.insert_one(query)
-	except pymongo.errors.DuplicateKeyError:
-		print('*** ERROR ***: _id DATA already exists')
+		docs.insert_one(query) # try run the insert query
+	except pymongo.errors.DuplicateKeyError:  # Catch the error if a duplicate exists.
+		print('*** ERROR ***: _id DATA already exists') # Print an error
 
 if __name__ == "__main__":
 	# execute only if run as a script 
